@@ -6,7 +6,7 @@ local gate
 local agent = {}
 
 function SOCKET.open(fd, addr)
-	skynet.error("New client from : " .. addr)
+	skynet.error("New client from : " .. addr .. "  fd:" .. fd)
 	agent[fd] = skynet.newservice("agent")
 	skynet.call(agent[fd], "lua", "start", { gate = gate, client = fd, watchdog = skynet.self() })
 end
@@ -22,18 +22,19 @@ local function close_agent(fd)
 end
 
 function SOCKET.close(fd)
-	print("socket close",fd)
+	skynet.error("socket close!!!",fd)
 	close_agent(fd)
+	skynet.error("socket close finish!!!")
 end
 
 function SOCKET.error(fd, msg)
-	print("socket error",fd, msg)
+	skynet.error("socket error",fd, msg)
 	close_agent(fd)
 end
 
 function SOCKET.warning(fd, size)
 	-- size K bytes havn't send out in fd
-	print("socket warning", fd, size)
+	skynet.error("socket warning", fd, size)
 end
 
 function SOCKET.data(fd, msg)

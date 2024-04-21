@@ -20,11 +20,10 @@ local function send_package(pack)
 	socket.write(client_fd, package)
 end
 
-local function unpack_and_dispatch(msg_ptr, size)
+local function unpack_and_dispatch(msg, sz)
 	-- 包的格式是 {"proto":"xxx", "data":{some json}}
 
-	local json_str = netpack.tostring(msg_ptr, size)
-	skynet.error("unpack_and_dispatch recv msg:" .. json_str)
+	local json_str = skynet.tostring(msg, sz) -- 不要用netpack.tostring, 内部会把内存释放，而导致skynet coredump
 	local succ, package = pcall(json.decode, json_str)
 	if succ and package.proto and package.data then
 		return true, package.proto, package.data
@@ -44,6 +43,23 @@ end
 function REQUEST.set(data)
 	local str = string.format("what:%s value:%s", data.what, data.value)
 	send_package("[set] " .. str)
+
+	local cacheservice = skynet.uniqueservice("cacheservice")
+	local ok, err = skynet.call(cacheservice, "lua", "set", data.what, data.value)
+	if not ok then
+		skynet.error("REQUEST.set " .. str .. " FAILED FAILED FAILED, error=" .. err)
+	end
+	send_package("[set] succ")	
+end
+
+function REQUEST.get(data)
+	local str = string.format("what :%s", data.what)
+	send_package("[get] " .. str)
+
+	local cacheservice = skynet.uniqueservice("cacheservice")
+	local value = skynet.call(cacheservice, "lua", "get", data.what)
+	str = string.format("%s=%s", data.what, value)
+	send_package("[get] succ, " .. str)
 end
 
 skynet.register_protocol {
@@ -93,6 +109,7 @@ end
 
 function CMD.disconnect()
 	-- todo: do something before exit
+	skynet.error("CMD.disconnect fd=" .. client_fd)
 	skynet.exit()
 end
 

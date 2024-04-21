@@ -100,10 +100,11 @@ end
 local function handle_client()
     send_request("handshake")
     send_request("set", {what="hello", value="world"})
-    --send_request("set", { what = "hello", value = "world" })
+    send_request("get", { what = "hello"})
     while true do
         dispatch_package()
         local cmd = socket.readstdin()
+		print("11111111111")
         if cmd then
             if cmd == "quit" then
                 send_request("quit")
