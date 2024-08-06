@@ -10,3 +10,4 @@ cd 3rd/jemalloc/
 sudo git submodule update
 ---
 
+## 使用了skynet自带的redis
