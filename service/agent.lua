@@ -9,8 +9,22 @@ local REQUEST = {}
 local WATCHDOG
 local gate
 local client_fd
+local player_id = 0  -- 未登录就是0，大于0代表登录了
 
 local function request(proto, data)
+	if REQUEST[proto] then
+		REQUEST[proto](data)
+
+	elseif player_id > 0 then
+		-- TODO 调用player_mgr
+		local player_mgr = skynet.uniqueservice("player_mgr")
+		skynet.send(player_mgr, "lua", "dispatch", client_fd, proto, data)
+	else
+		-- 调用login_mgr
+		local login_mgr = skynet.uniqueservice("login_mgr")
+		skynet.send(login_mgr, "lua", "dispatch", client_fd, proto, data)
+	end
+
 	local f = assert(REQUEST[proto])
 	f(data)
 end
@@ -91,18 +105,7 @@ function CMD.start(conf)
 	local fd = conf.client
 	local gate = conf.gate
 	WATCHDOG = conf.watchdog
-	-- slot 1,2 set at main.lua
-
-    -- 先不考虑用sproto
-	--host = sprotoloader.load(1):host "package"
-	--send_request = host:attach(sprotoloader.load(2))
-	--skynet.fork(function()
-	--	while true do
-	--		send_package(send_request "heartbeat")
-	--		skynet.sleep(500)
-	--	end
-	--end)
-
+	
 	client_fd = fd
 	skynet.call(gate, "lua", "forward", fd)
 end
@@ -111,6 +114,16 @@ function CMD.disconnect()
 	-- todo: do something before exit
 	skynet.error("CMD.disconnect fd=" .. client_fd)
 	skynet.exit()
+end
+
+function CMD.response(proto, data)
+	-- {"proto":"xxx", "data":{some json data}}
+	if not data then 
+		data = {}
+	end
+    local json_table = {proto=proto, data=data}
+	local str = json.encode(json_table)
+	send_package(fd, str)
 end
 
 skynet.start(function()
