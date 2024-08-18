@@ -1,0 +1,11 @@
+
+cs_player_info 1101 {
+    request {
+        token           0 : string          # token
+    }
+    response {
+        player_id       0 : integer         # 角色ID
+        nickname        1 : string          # 角色昵称
+        level           2 : integer         # 等级
+    }
+}

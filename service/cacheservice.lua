@@ -1,3 +1,11 @@
+--[[
+Author: elenno elenno.chen@gmail.com
+Date: 2024-08-06 23:27:05
+LastEditors: elenno elenno.chen@gmail.com
+LastEditTime: 2024-08-18 12:36:07
+FilePath: \MySkynetServer\service\cacheservice.lua
+Description: 这是默认设置,请设置`customMade`, 打开koroFileHeader查看配置 进行设置: https://github.com/OBKoro1/koro1FileHeader/wiki/%E9%85%8D%E7%BD%AE
+--]]
 -- 缓存服务
 
 -- 角色登录时从缓存获取数据
@@ -6,6 +14,7 @@
 
 local skynet = require "skynet"
 local redis = require 'skynet.db.redis'
+local log = require "utility.log"
 local host
 local port
 local conn
@@ -20,7 +29,6 @@ function CMD.get(key)
     local response = conn:get(key)
     if not response then
         skynet.error("CMD.get key:" .. key .. " is nil")
-        assert(false)
     end
     return response
 end
@@ -29,7 +37,6 @@ function CMD.set(key, value)
     local ok, err = conn:set(key, value)
     if not ok then
         skynet.error("CMD.set ERROR key:" .. key .. " value:" .. value .. "  error:" .. err)
-        assert(false)
     end
     return ok, err
 end
@@ -38,7 +45,7 @@ function CMD.open(conf)
     host = conf.host
     port = conf.port
     conn = assert(redis.connect(conf))
-    
+    log.debug("CMD.open conf={1}", conf)
     return true
 end
 

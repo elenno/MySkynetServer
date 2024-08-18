@@ -1,3 +1,11 @@
+--[[
+Author: elenno elenno.chen@gmail.com
+Date: 2024-08-06 23:27:05
+LastEditors: elenno elenno.chen@gmail.com
+LastEditTime: 2024-08-18 13:13:24
+FilePath: \MySkynetServer\service\player_mgr.lua
+Description: 这是默认设置,请设置`customMade`, 打开koroFileHeader查看配置 进行设置: https://github.com/OBKoro1/koro1FileHeader/wiki/%E9%85%8D%E7%BD%AE
+--]]
 -- player的管理器
 
 local skynet = require "skynet"
@@ -22,7 +30,7 @@ function CMD.generate_player_name()
     --TODO
 end
 
-function CMD.on_player_login(client_fd, player_id)
+function CMD.on_player_login(agent_handle, client_fd, player_id)
     --TODO
 
 end

@@ -1,0 +1,5 @@
+sc_tip_msg 551 {
+    request {
+        msg             0 : string          # 提示消息
+    }
+}

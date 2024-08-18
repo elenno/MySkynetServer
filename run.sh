@@ -6,7 +6,7 @@ SKYNET_EXEC="./skynet/skynet"
 CONFIG_DIR="skynet_config"
 
 # 定义可支持的进程名称数组
-declare -a PROCESSES=("game" "process1" "process2")
+declare -a PROCESSES=("game" "client" "process2")
 
 # 检查pid目录是否存在，不存在则创建
 if [ ! -d "$PID_DIR" ]; then

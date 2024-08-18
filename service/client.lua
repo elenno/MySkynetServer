@@ -1,12 +1,17 @@
 local skynet = require "skynet"
 local socket = require "skynet.socket"
+local sproto_loader = require "proto.sproto_loader"
+local util = require "utility.util"
+local log = require "utility.log"
+local sproto_host
+local sproto_packer
 
 local host = "127.0.0.1"  -- 监听所有网络接口
 local port = 8888        -- 指定端口号
 local fd
 
 local json = require("dkjson")
-
+local request_hash = {}
 
 local function send_package(fd, pack)
 	local package = string.pack(">s2", pack)
@@ -37,13 +42,12 @@ local function recv_package(last)
 		return nil, last
 	end
 	if r == "" then
-		error "Server closed"
+		log.error("Server closed")
 	end
 	return unpack_package(last .. r)
 end
 
-
-local function send_request(proto, data)
+local function send_json_request(proto, data)
     -- {"proto":"xxx", "data":{some json data}}
 	if not data then 
 		data = {}
@@ -52,6 +56,27 @@ local function send_request(proto, data)
 	local str = json.encode(json_table)
 	send_package(fd, str)
 	print("Request:" .. str)
+end
+
+local session_generator
+local function gen_session_id()
+	session_generator = (session_generator or 0) + 1
+	return session_generator
+end
+
+local function send_request(proto, data, session, ud)
+	local session = gen_session_id()
+	local ud = math.random(1, 100)
+	request_hash[session] = {
+		proto = proto,
+		data = data,
+		session = session,
+		ud = ud,
+	}
+	local pack = sproto_packer(proto, data, session, ud)
+	log.debug("send_request proto={1},data={2},session={3}", 
+		proto, data, session)
+	send_package(fd, pack)
 end
 
 local last = ""
@@ -65,13 +90,13 @@ local function print_request(name, args)
 	end
 end
 
-local function print_response(str)
-	print("RESPONSE: " .. str)
-	-- if args then
-	-- 	for k,v in pairs(args) do
-	-- 		print(k,v)
-	-- 	end
-	-- end
+local function print_response(session, args)
+	print("RESPONSE", session)
+	if args then
+		for k,v in pairs(args) do
+			print(k,v)
+		end
+	end
 end
 
 local function print_package(t, ...)
@@ -91,25 +116,31 @@ local function dispatch_package()
 			break
 		end
 
-		print_package("RESPONSE", v)
+		print_package(sproto_host:dispatch(v))
 	end
 end
 
-
+local function request_login()
+	local data = {
+		username = "robot"
+	}
+	send_request("cs_login", data)
+end
 
 local function handle_client()
-    send_request("handshake")
-    send_request("set", {what="hello", value="world"})
-    send_request("get", { what = "hello"})
+    --send_json_request("handshake")
+    --send_json_request("set", {what="hello", value="world"})
+    --send_json_request("get", { what = "hello"})
+	request_login()
     while true do
         dispatch_package()
         local cmd = socket.readstdin()
-		print("11111111111")
         if cmd then
+			log.debug("handle_client cmd={1}", cmd)
             if cmd == "quit" then
-                send_request("quit")
+                --send_json_request("quit")
             else
-                send_request("get", { what = cmd })
+                --send_json_request("get", { what = cmd })
             end
         else
             socket.usleep(100)
@@ -118,8 +149,9 @@ local function handle_client()
 end
 
 skynet.start(function()
-	skynet.error("[start client] client started!!!")
-	
+	log.debug("[start client] client started!!!")
+	sproto_host = sproto_loader:host("package")
+	sproto_packer = sproto_host:attach(sproto_loader)
 	fd = socket.open(host, port)
     if fd then
         skynet.error("Connect to server:" .. host .. ":" .. port .. " SUCC SUCC SUCC")

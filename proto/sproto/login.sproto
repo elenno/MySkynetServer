@@ -1,0 +1,29 @@
+
+cs_login 1001 {
+    request {
+        username        0 : string          # 用户名
+    }
+    response {
+        errCode         0 : integer         # 错误码
+    }
+}
+
+cs_register 1002 {
+    request {
+        username        0 : string          # 用户名
+        nickname        1 : string          # 昵称
+    }
+    response {
+        errCode         0 : integer         # 错误码
+    }
+}
+
+cs_rand_name 1003 {
+    request {
+
+    }
+    response {
+        errCode         0 : integer         # 错误码
+        nickname        1 : string          # 昵称
+    }
+}
